@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ghost Cereal</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: #f2f2f2;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: 64,
+            height: 64,
+        };
+
+        const playerImages = {
+            up: new Image(),
+            down: new Image(),
+            left: new Image(),
+            right: new Image(),
+            eat: new Image()
+        };
+
+        playerImages.up.src = 'up.png';
+        playerImages.down.src = 'down.png';
+        playerImages.left.src = 'left.png';
+        playerImages.right.src = 'right.png';
+        playerImages.eat.src = 'fish_eat.gif';
+
+        let currentImage = playerImages.up;
+
+        const food = [];
+
+        const eatenColors = [];
+
+        let isEating = false;
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function generateRandomFood() {
+            const newFood = {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 10 + 5,
+                color: getRandomColor(),
+                speed: Math.random() * 1.9 + 0.1, // 0.1에서 2까지의 랜덤한 속도
+            };
+            food.push(newFood);
+        }
+
+        playerImages.up.onload = function() {
+            function drawPlayer() {
+                ctx.drawImage(currentImage, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+            }
+
+            function drawFood() {
+                for (let i = 0; i < food.length; i++) {
+                    // 원과 플레이어 간의 거리 계산
+                    const dx = player.x - food[i].x;
+                    const dy = player.y - food[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // 원과 플레이어 간의 거리가 200px 이내인 경우만 원은 도망감
+                    if (distance < 200) {
+                        const angle = Math.atan2(dy, dx);
+                        food[i].x -= Math.cos(angle) * food[i].speed;
+                        food[i].y -= Math.sin(angle) * food[i].speed;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(food[i].x, food[i].y, food[i].radius, 0, Math.PI * 2);
+                    ctx.fillStyle = food[i].color;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+
+            function drawEatenColors() {
+                let row = 0;
+                let col = 0;
+                const blockSize = 50;
+
+                for (let i = 0; i < eatenColors.length; i++) {
+                    const x = col * blockSize;
+                    const y = row * blockSize;
+
+                    ctx.fillStyle = eatenColors[i];
+                    ctx.beginPath();
+                    ctx.arc(x + blockSize / 2, y + blockSize / 2, blockSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.closePath();
+
+                    col++;
+
+                    if (col * blockSize >= canvas.width) {
+                        col = 0;
+                        row++;
+                    }
+                }
+            }
+
+            function movePlayer(event) {
+                const speed = 20; // 이동 속도 2배로 증가
+
+                if (!isEating) {
+                    switch (event.key) {
+                        case 'ArrowUp':
+                            player.y -= speed;
+                            currentImage = playerImages.up;
+                            break;
+                        case 'ArrowDown':
+                            player.y += speed;
+                            currentImage = playerImages.down;
+                            break;
+                        case 'ArrowLeft':
+                            player.x -= speed;
+                            currentImage = playerImages.left;
+                            break;
+                        case 'ArrowRight':
+                            player.x += speed;
+                            currentImage = playerImages.right;
+                            break;
+                    }
+                }
+            }
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                drawFood();
+                drawPlayer();
+                drawEatenColors();
+
+                for (let i = food.length - 1; i >= 0; i--) {
+                    const dx = player.x - food[i].x;
+                    const dy = player.y - food[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < player.width / 2 + food[i].radius) {
+                        food.splice(i, 1);
+                        player.width += 2;
+                        player.height += 2;
+                        isEating = true;
+                        currentImage = playerImages.eat;
+                        eatenColors.push(food[i].color);
+
+                        if (eatenColors.length * 50 >= canvas.width) {
+                            // 만약 색상 블록이 화면을 가득 채우면 한 줄 내림
+                            eatenColors.shift();
+                        }
+
+                        setTimeout(() => {
+                            isEating = false;
+                            currentImage = playerImages.up;
+                        }, 500);
+                    }
+                }
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.addEventListener('keydown', movePlayer);
+            window.addEventListener('resize', resizeCanvas);
+
+            resizeCanvas();
+            setInterval(generateRandomFood, 1000);
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
