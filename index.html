@@ -62,7 +62,7 @@
                 y: Math.random() * canvas.height,
                 radius: Math.random() * 10 + 5,
                 color: getRandomColor(),
-                speed: Math.random() * 1.9 + 0.1, // 0.1에서 2까지의 랜덤한 속도
+                speed: Math.random() * 1.9 + 0.1, 
             };
             food.push(newFood);
         }
@@ -74,12 +74,10 @@
 
             function drawFood() {
                 for (let i = 0; i < food.length; i++) {
-                    // 원과 플레이어 간의 거리 계산
                     const dx = player.x - food[i].x;
                     const dy = player.y - food[i].y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    // 원과 플레이어 간의 거리가 200px 이내인 경우만 원은 도망감
                     if (distance < 200) {
                         const angle = Math.atan2(dy, dx);
                         food[i].x -= Math.cos(angle) * food[i].speed;
@@ -119,7 +117,7 @@
             }
 
             function movePlayer(event) {
-                const speed = 20; // 이동 속도 2배로 증가
+                const speed = 20; 
 
                 if (!isEating) {
                     switch (event.key) {
@@ -169,7 +167,6 @@
                         eatenColors.push(food[i].color);
 
                         if (eatenColors.length * 50 >= canvas.width) {
-                            // 만약 색상 블록이 화면을 가득 채우면 한 줄 내림
                             eatenColors.shift();
                         }
 
